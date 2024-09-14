@@ -1,0 +1,15 @@
+[[repository]]
+type = "file"
+name = "fasm-mode"
+author = "emacsattic"
+src = "https://raw.githubusercontent.com/emacsattic/fasm-mode/master/fasm-mode.el"
+license = "custom"
+
+[[repository]]
+type = "github"
+name = "tomlc99"
+author = "cktan"
+repo = "tomlc99"
+branch = "master"
+version = "1.0.0"
+license = "MIT"
