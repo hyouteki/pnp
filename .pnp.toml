@@ -7,3 +7,7 @@ generate-readme = false
 [[dependency]]
 name = "fasm-mode.el"
 path = "/"
+
+[[dependency]]
+name = "steel"
+path = "hello"

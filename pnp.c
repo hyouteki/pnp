@@ -8,6 +8,11 @@
 #include "tomlc99/toml.h"
 
 #define PNP_CONF_NAME ".pnp.toml"
+#ifdef _WIN32
+#define REDIRECT_NULL " > NUL 2>&1"
+#else
+#define REDIRECT_NULL " > /dev/null 2>&1" 
+#endif
 
 typedef enum {
 	Pnp_Subcommand_Build,
@@ -173,7 +178,10 @@ static void perform_subcommand_build(Repository *repo) {
 						"curl %s -o %s -s", repo->file.src, download_path);
 	} break;
 	case Repository_Kind_Github:
-		// TODO: add github repository support 
+		code = snprintf(snprintf_buffer, sizeof(snprintf_buffer),
+						"git clone https://github.com/%s/%s --single-branch --branch %s %s %s",
+						repo->github.author, repo->github.repo, repo->github.branch,
+						download_path, REDIRECT_NULL);
 		break;
 	default:
 		Error("unknown Repository_Kind '%d'", repo->kind);
