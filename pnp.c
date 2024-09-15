@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include "helper.h"
 #include "hashmap.h"
-#include "repository.h"
+#include "package.h"
 #include "tomlc99/toml.h"
 
 #define PNP_CONF_NAME ".pnp.toml"
@@ -36,11 +36,11 @@ static void usage();
 static char *get_package_name(int, char *[]);
 static void parse_args(int, char*[]);
 static char *toml_read_string(toml_table_t *, const char *);
-static Repository *parse_repository(toml_table_t *);
+static Package *parse_package(toml_table_t *);
 static void parse_pnp_repository(const char *);
 static void parse_pnp_conf();
-static void perform_subcommand_build(Repository *);
-static void perform_subcommand(Repository *);
+static void perform_subcommand_build(Package *);
+static void perform_subcommand(Package *);
 static char *join_paths(const char *, const char *);
 static int path_exists(const char *);
 
@@ -89,24 +89,24 @@ static char *toml_read_string(toml_table_t *toml_table, const char *field) {
 	return toml_field.u.s;
 }
 
-static Repository *parse_repository(toml_table_t *toml_repo) {
-	Repository *repo = (Repository *)malloc(sizeof(Repository));
-	repo->name = toml_read_string(toml_repo, "name");
-	char *type = toml_read_string(toml_repo, "type");
+static Package *parse_package(toml_table_t *toml_package) {
+	Package *package = (Package *)malloc(sizeof(Package));
+	package->name = toml_read_string(toml_package, "name");
+	char *type = toml_read_string(toml_package, "type");
 	if (strcmp(type, "file") == 0) {
-		repo->file.author = toml_read_string(toml_repo, "author");
-		repo->file.src = toml_read_string(toml_repo, "src");
-		repo->file.license = toml_read_string(toml_repo, "license");
-		repo->kind = Repository_Kind_File;
+		package->file.author = toml_read_string(toml_package, "author");
+		package->file.src = toml_read_string(toml_package, "src");
+		package->file.license = toml_read_string(toml_package, "license");
+		package->kind = Package_Kind_File;
 	} else if (strcmp(type, "github") == 0) {
-		repo->github.author = toml_read_string(toml_repo, "author");
-		repo->github.repo = toml_read_string(toml_repo, "repo");
-		repo->github.branch = toml_read_string(toml_repo, "branch");
-		repo->github.version = toml_read_string(toml_repo, "version");
-		repo->github.license = toml_read_string(toml_repo, "license");
-		repo->kind = Repository_Kind_Github;
-	} else Error_NoExit("cannot invalid repository type '%s'", type);
-	return repo;
+		package->github.author = toml_read_string(toml_package, "author");
+		package->github.repo = toml_read_string(toml_package, "repo");
+		package->github.branch = toml_read_string(toml_package, "branch");
+		package->github.version = toml_read_string(toml_package, "version");
+		package->github.license = toml_read_string(toml_package, "license");
+		package->kind = Package_Kind_Github;
+	} else Error_NoExit("cannot invalid package type '%s'", type);
+	return package;
 }
 
 static void parse_pnp_repository(const char *filename) {
@@ -118,16 +118,17 @@ static void parse_pnp_repository(const char *filename) {
     fclose(file);
     if (!root) Error_Toml("cannot parse file", error_buffer);
 
-    toml_array_t *repositories = toml_array_in(root, "repository");
-    if (!repositories) Error("cannot find repository array", "");
+    toml_array_t *packages = toml_array_in(root, "package");
+    if (!packages) Error("cannot find package array", "");
 
 	size_t i = 0;
     while (1) {
-        toml_table_t *toml_repo = toml_table_at(repositories, i++);
-        if (!toml_repo) break;
-		Repository *repo = parse_repository(toml_repo);
-		perform_subcommand(repo);
-		toml_free(toml_repo);
+        toml_table_t *toml_package = toml_table_at(packages, i++);
+        if (!toml_package) break;
+		Package *package = parse_package(toml_package);
+		perform_subcommand(package);
+		//TODO: free package and its content
+		toml_free(toml_package);
     }
 	toml_free(root);
 }
@@ -158,43 +159,43 @@ static void parse_pnp_conf() {
 	toml_free(root);
 }
 
-static void perform_subcommand_build(Repository *repo) {
-	if (!String_Hashmap_Find(&hashmap, repo->name)) return;
-	char *relative_path = String_Hashmap_Lookup(&hashmap, repo->name);
-	printf("info: build '%s' at '%s'\n", repo->name, relative_path);
+static void perform_subcommand_build(Package *package) {
+	if (!String_Hashmap_Find(&hashmap, package->name)) return;
+	char *relative_path = String_Hashmap_Lookup(&hashmap, package->name);
+	printf("info: build '%s' at '%s'\n", package->name, relative_path);
 	char *path_from_root = join_paths("./", relative_path);
 	free(relative_path);
-	char *download_path = join_paths(path_from_root, repo->name);
+	char *download_path = join_paths(path_from_root, package->name);
 	free(path_from_root);
 	if (path_exists(download_path)) {
-		printf("info: path exists; ignoring build for this repository\n");
+		printf("info: path exists; ignoring build for this package\n");
 		return;
 	}
 	char snprintf_buffer[1024];
 	int code;
-	switch (repo->kind) {
-	case Repository_Kind_File: {
+	switch (package->kind) {
+	case Package_Kind_File: {
 		code = snprintf(snprintf_buffer, sizeof(snprintf_buffer),
-						"curl %s -o %s -s", repo->file.src, download_path);
+						"curl %s -o %s -s", package->file.src, download_path);
 	} break;
-	case Repository_Kind_Github:
+	case Package_Kind_Github:
 		code = snprintf(snprintf_buffer, sizeof(snprintf_buffer),
 						"git clone https://github.com/%s/%s --single-branch --branch %s %s %s",
-						repo->github.author, repo->github.repo, repo->github.branch,
+						package->github.author, package->github.repo, package->github.branch,
 						download_path, REDIRECT_NULL);
 		break;
 	default:
-		Error("unknown Repository_Kind '%d'", repo->kind);
+		Error("unknown Package_Kind '%d'", package->kind);
 	}
 	printf("info: cmd: %s\n", snprintf_buffer);
 	if (code < 0) Error("snprintf error");
 	system(snprintf_buffer);
 }
 
-static void perform_subcommand(Repository *repo) {
+static void perform_subcommand(Package *package) {
 	switch (subcommand) {
 	case Pnp_Subcommand_Build:
-		perform_subcommand_build(repo);
+		perform_subcommand_build(package);
 		break;
 	default:
 		Error("unknown SUBMCOMMAND", "");

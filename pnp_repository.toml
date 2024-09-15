@@ -1,11 +1,11 @@
-[[repository]]
+[[package]]
 type = "file"
 name = "fasm-mode.el"
 author = "emacsattic"
 src = "https://raw.githubusercontent.com/emacsattic/fasm-mode/master/fasm-mode.el"
 license = "custom"
 
-[[repository]]
+[[package]]
 type = "github"
 name = "tomlc99"
 author = "cktan"
@@ -14,7 +14,7 @@ branch = "master"
 version = "1.0.0"
 license = "MIT"
 
-[[repository]]
+[[package]]
 type = "github"
 name = "steel"
 author = "hyouteki"
