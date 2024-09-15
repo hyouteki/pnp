@@ -1,0 +1,9 @@
+[[configuration]]
+generate-gitignore = true
+generate-setup-guide = true
+generate-courtesy = true
+generate-readme = false
+
+[[dependency]]
+name = "fasm-mode.el"
+path = "/"

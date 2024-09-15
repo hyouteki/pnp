@@ -1,6 +1,6 @@
 [[repository]]
 type = "file"
-name = "fasm-mode"
+name = "fasm-mode.el"
 author = "emacsattic"
 src = "https://raw.githubusercontent.com/emacsattic/fasm-mode/master/fasm-mode.el"
 license = "custom"
