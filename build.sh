@@ -1,24 +1,20 @@
 #!/bin/bash
 
-set -e
+set -xe
 
-build_name="pnp"
-cc="gcc"
-cflags=("-Wall" "-Wextra" "-Wno-format" "-Wno-format-extra-args")
-src_dir="./src"
-deps=("tomlc99/toml.c")
-main_file="main.c"
-build_output="./$build_name"
+CC="gcc"
+CFLAGS=("-Wall" "-Wextra" "-Wno-format" "-Wno-format-extra-args" "-O5")
+SRC_DIR="./src"
+DEPS=("tomlc99/toml.c")
 
-main_path="$src_dir/$main_file"
-dep_paths=()
-for dep in "${deps[@]}"; do
-    dep_paths+=("$src_dir/$dep")
+BUILD_NAME="pnp"
+MAIN_FILE="main.c"
+MAIN_PATH="${SRC_DIR}/${MAIN_FILE}"
+
+DEP_PATHS=()
+for DEP in "${DEPS[@]}"; do
+    DEP_PATHS+=("${SRC_DIR}/${DEP}")
 done
 
-$cc $main_path ${cflags[@]} ${dep_paths[@]} -o $build_output
-if [ $? -ne 0 ]; then
-    echo "error: Build failed with exit code $?"
-else
-    ./$build_output build
-fi
+$CC $MAIN_PATH ${DEP_PATHS[@]} ${CFLAGS[@]} -o $BUILD_NAME
+./$BUILD_NAME build

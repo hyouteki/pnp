@@ -130,7 +130,9 @@ static void parse_pnp_repository(const char *filename) {
 		//TODO: free package and its content
 		toml_free(toml_package);
     }
+#ifdef _WIN32
 	toml_free(root);
+#endif
 }
 
 static void parse_pnp_conf() {
@@ -156,7 +158,9 @@ static void parse_pnp_conf() {
 		free(dep_path);
 		toml_free(dependency);
     }
+#ifdef _WIN32
 	toml_free(root);
+#endif
 }
 
 static void perform_subcommand_build(Package *package) {
