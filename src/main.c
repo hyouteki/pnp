@@ -28,6 +28,15 @@ typedef enum {
 	Pnp_Subcommand_None,
 } Pnp_Subcommand_Kind;
 
+typedef struct BuildFlags {
+	int generate_readme;
+	int generate_gitignore;
+	int generate_setup_guide;
+	int generate_courtesy;
+} BuildFlags;
+
+BuildFlags flags = {0};
+
 static char *subcommand_package_name;
 static String_Hashmap hashmap;
 static Pnp_Subcommand_Kind subcommand = Pnp_Subcommand_None;
@@ -38,6 +47,7 @@ static void parse_args(int, char*[]);
 static char *toml_read_string(toml_table_t *, const char *);
 static Package *parse_package(toml_table_t *);
 static void parse_pnp_repository(const char *);
+static void parse_pnp_toml_configuration(toml_array_t *);
 static void parse_pnp_conf();
 static void perform_subcommand_build(Package *);
 static void perform_subcommand(Package *);
@@ -135,6 +145,17 @@ static void parse_pnp_repository(const char *filename) {
 #endif
 }
 
+static void parse_pnp_toml_configuration(toml_array_t *configuration) {
+	for (int i = 0; i < toml_array_nelem(configuration); i++) {
+		toml_table_t* entry = toml_table_at(configuration, i);
+
+		if (toml_bool_in(entry, "generate-readme").u.b) flags.generate_readme = 1;
+		if (toml_bool_in(entry, "generate-gitignore").u.b) flags.generate_gitignore = 1;
+		if (toml_bool_in(entry, "generate-setup_guide").u.b) flags.generate_setup_guide = 1;
+		if (toml_bool_in(entry, "generate-courtesy").u.b) flags.generate_courtesy = 1;
+	}
+}
+
 static void parse_pnp_conf() {
     FILE *file = fopen(PNP_CONF_NAME, "r");
     if (!file) Error("cannot open file '%s'", PNP_CONF_NAME);
@@ -144,6 +165,9 @@ static void parse_pnp_conf() {
     fclose(file);
     if (!root) Error_Toml("cannot parse file", error_buffer);
 
+	toml_array_t *configuration = toml_array_in(root, "configuration");
+	if (configuration) parse_pnp_toml_configuration(configuration);
+	
     toml_array_t *dependencies = toml_array_in(root, "dependency");
     if (!dependencies) Error("cannot find dependency array", "");
 

@@ -3,7 +3,7 @@
 set -xe
 
 CC="gcc"
-CFLAGS=("-Wall" "-Wextra" "-Wno-format" "-Wno-format-extra-args" "-O5")
+CFLAGS=("-Wall" "-Wextra" "-Wno-format" "-Wno-format-extra-args" "-Wno-unused-result" "-O5")
 SRC_DIR="./src"
 DEPS=("tomlc99/toml.c")
 
